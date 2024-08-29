@@ -27,7 +27,8 @@ class AzCopy:
             source_path,
             destination_url,
             '--recursive',
-            '--check-length'
+            '--check-length',
+            # '--cap-mbps=1'
         ]
         return command
 
@@ -40,11 +41,11 @@ class AzCopy:
         """
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_file_path = os.path.join(temp_dir, "temp_file")
-        
+            file_source = destination_url.split('?')
             command = [
                 self.azcopy_path,
                 'copy',
-                destination_url,
+                f'{file_source[0]}/{file_name.split('\\')[-1]}?{file_source[1]}',
                 temp_file_path,
                 '--recursive'
             ]
@@ -53,7 +54,8 @@ class AzCopy:
                 subprocess.run(command, check=True)
                 self.logger.log_info(f"Arquivo '{destination_url}' baixado para '{temp_file_path}'.")
                 hash_func = hashlib.new(hash_algo)
-                with open(f'{temp_file_path}/inbound/{file_name}', 'rb') as f:
+                print(temp_file_path)
+                with open(f'{temp_file_path}', 'rb') as f:
                     while chunk := f.read(8192):
                         hash_func.update(chunk)
 

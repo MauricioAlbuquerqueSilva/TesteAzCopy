@@ -15,6 +15,7 @@ class DirectoryWatchdog(FileSystemEventHandler):
     def on_any_event(self, event):
         print(event.is_directory)
         print(event)
+        
     def on_modified(self, event):
         if not event.is_directory:
             self.logger.log_info(f"Arquivo modificado: {event.src_path}")
@@ -28,12 +29,12 @@ class DirectoryWatchdog(FileSystemEventHandler):
 def main():
     logger = LoggerManager('main.log')
     # windowns
-    # azcopy_path = r"C:\Program Files\azcopy\azcopy.exe"
-    azcopy_path = "/bin/azcopy"
+    azcopy_path = r"C:\Program Files\azcopy\azcopy.exe"
+    # azcopy_path = "/bin/azcopy"
     # windowns
-    # directory_to_watch = r"C:\Users\Admin\Desktop\MauMau\Estudos\Az\AzCopy\ProjetoAzCopyPython\fonte"
-    directory_to_watch = "/home/mauricio"
-    destination_url = "token  SAS/container inbound "
+    directory_to_watch = r"C:\Users\Admin\Desktop\MauMau\Estudos\Az\AzCopy\ProjetoAzCopyPython\fonte"
+    # directory_to_watch = "/home/mauricio"
+    destination_url = "https://azcopypocbrad.blob.core.windows.net/containername?token"
 
     file_system_manager = FileSystemManager(directory_to_watch, logger)
     az_copy = AzCopy(azcopy_path, file_system_manager, logger, retries=5, retry_delay=30)
