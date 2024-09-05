@@ -1,0 +1,8 @@
+[
+    {
+        "id":"ING_001",
+        "path_db": "cad_unico.db",
+        "cloud_destination_folder_name":"cad_unico",
+        "cloud_location_container": "inbound"
+    }
+]

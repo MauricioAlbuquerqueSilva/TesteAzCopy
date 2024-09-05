@@ -5,10 +5,11 @@ from az_copy import AzCopy
 from logger_manager import LoggerManager
 
 class DirectoryWatch:
-    def __init__(self, directory_to_watch, file_system_manager, az_copy, destination_url, processed_files_log, logger=None):
+    def __init__(self, directory_to_watch, file_system_manager, az_copy, destination_url, token, processed_files_log, logger=None):
         self.directory_to_watch = directory_to_watch
         self.file_system_manager = file_system_manager
         self.az_copy = az_copy
+        self.token = token
         self.destination_url = destination_url
         self.processed_files_log = processed_files_log
         self.ensure_log_file_exists()
@@ -41,35 +42,44 @@ class DirectoryWatch:
     def check_for_changes(self):
         """Verifica as mudanças no diretório e processa os arquivos conforme necessário."""
         current_snapshot = self.take_snapshot()
-
         for file_name, mtime in current_snapshot.items():
-            file_path = os.path.join(self.directory_to_watch, file_name)
-            if file_name not in self.files_snapshot or self.files_snapshot[file_name] != mtime:
-                if file_path not in self.processed_files:
-                    self.logger.log_info(f"Arquivo processado: {file_path}")
-                    self.file_system_manager.process_file(file_path, self.az_copy, self.destination_url)
-                    self.write_processed_file(file_path)
-                    self.processed_files.add(file_path)
+            available_memory = self.file_system_manager.get_available_memory()
+            print(f'Sistema operacional: {os.name} memoria disponivel: {available_memory}')
+            if (os.name == 'posix' and available_memory is not None and available_memory > 500) or (os.name == 'nt'):
+                file_path = os.path.join(self.directory_to_watch, file_name)
+                if file_name not in self.files_snapshot or self.files_snapshot[file_name] != mtime:
+                    if file_path not in self.processed_files:
+                        self.logger.log_info(f"Arquivo processado: {file_path}")
+                        self.file_system_manager.process_file(file_path, self.az_copy, self.destination_url, self.token)
+                        self.file_system_manager.process_error_files(self.az_copy)
+                        self.write_processed_file(file_path)
+                        self.processed_files.add(file_path)
+            else: 
+                self.logger.log_info(f"Memória da maquina insuficiente para processar os arquivos: {available_memory}")
 
         self.files_snapshot = current_snapshot
 
 def main():
     logger = LoggerManager('main.log')
-    azcopy_path = r"C:\Program Files\azcopy\azcopy.exe"
-    directory_to_watch = r"C:\Users\Admin\Desktop\MauMau\Estudos\Az\AzCopy\ProjetoAzCopyPython\fonte"
-    destination_url = "https://azcopypocbrad.blob.core.windows.net/inbound?sp=racwdl&st=2024-08-29T11:52:03Z&se=2024-08-30T19:52:03Z&sv=2022-11-02&sr=c&sig=8IBu0A0ahi1y8TZWOfCqPd4W27KlY%2FXdaQfBlwxmuz8%3D"
+    
+    azcopy_path = "/bin/azcopy"
+    directory_to_watch = "./ingestion"
+
+    destination_url = "https://azcopypocbrad.blob.core.windows.net"
+    token = "?sp=racwdl&st=2024-09-04T19:43:18Z&se=2024-09-05T03:43:18Z&sv=2022-11-02&sr=c&sig=AvcrAAMy9UeH%2FxITwT2aWSw8bFZ2dXLuom6APUCHj8c%3D"
+
     processed_files_log = 'processed_files.txt'
 
     file_system_manager = FileSystemManager(directory_to_watch, logger)
-    az_copy = AzCopy(azcopy_path, file_system_manager, logger, retries=5, retry_delay=30)
+    az_copy = AzCopy(azcopy_path, file_system_manager, logger, retries=1, retry_delay=10)
 
-    directory_watchdog = DirectoryWatch(directory_to_watch, file_system_manager, az_copy, destination_url, processed_files_log, logger)
+    directory_watch = DirectoryWatch(directory_to_watch, file_system_manager, az_copy, destination_url, token, processed_files_log, logger)
 
     try:
         logger.log_info(f"Observando o diretório: {directory_to_watch}")
         while True:
-            directory_watchdog.check_for_changes()
-            time.sleep(1)  # Intervalo de tempo entre as verificações
+            directory_watch.check_for_changes()
+            time.sleep(5)  # Intervalo de tempo entre as verificações
     except KeyboardInterrupt:
         logger.log_info("Interrompido pelo usuário.")
 
