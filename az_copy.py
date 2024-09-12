@@ -32,14 +32,28 @@ class AzCopy:
         ]
         return command
     
+    def build_login_command(self):
+        command = [
+            self.azcopy_path,
+            'login',
+            '--service-principal',
+            '--certificate-path', './azure_sp_combined.pem',
+            '--application-id', '559f7656-bc7f-42e1-b8ad-23409ba5731a',
+            '--tenant-id', '65b9116f-bba2-4b02-a238-6e844f727c03'
+        ]
+        # azcopy login --service-principal --certificate-path ./azure_sp_combined.pem  --application-id 559f7656-bc7f-42e1-b8ad-23409ba5731a --tenant-id 65b9116f-bba2-4b02-a238-6e844f727c03
+        return command
+    
     def copy_to_azure(self, source_path, destination_url):
         """Copia o arquivo para o Azure usando o AzCopy com limite de rede e suporte a recomeço automático."""
         self.logger.log_info(f"copiando '{source_path}' para '{destination_url}'.")
         command = self.build_command(source_path, destination_url)
+        command_login = self.build_login_command()
 
         attempt = 0
         while attempt < self.retries:
             try:
+                subprocess.run(command_login, check=True)
                 subprocess.run(command, check=True)
                 self.logger.log_info(f"Arquivo '{source_path}' copiado com sucesso para '{destination_url}'.")
                 

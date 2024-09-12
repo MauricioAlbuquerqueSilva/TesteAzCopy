@@ -1,0 +1,7 @@
+
+openssl req -x509 -newkey rsa:2048 -keyout azure_sp_private_key.pem -out azure_sp_cert.pem -days 365 -nodes
+openssl x509 -outform der -in azure_sp_cert.pem -out azure_sp_cert.cer
+cat azure_sp_private_key.pem azure_sp_cert.pem > azure_sp_combined.pem
+
+
+azcopy login --service-principal --certificate-path ./azure_sp_combined.pem  --application-id 559f7656-bc7f-42e1-b8ad-23409ba5731a --tenant-id 65b9116f-bba2-4b02-a238-6e844f727c03

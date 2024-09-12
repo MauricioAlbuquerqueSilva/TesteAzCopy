@@ -1,5 +1,6 @@
 import os
 import time
+import subprocess
 from file_system_manager import FileSystemManager
 from az_copy import AzCopy
 from logger_manager import LoggerManager
@@ -64,11 +65,15 @@ def main():
     
     azcopy_path = "/bin/azcopy"
     directory_to_watch = "./ingestion"
+    
+    # openssl req -x509 -newkey rsa:2048 -keyout private_key.pem -out cert.pem -days 365
 
     destination_url = "https://azcopypocbrad.blob.core.windows.net"
-    token = "?sp=racwdl&st=2024-09-04T19:43:18Z&se=2024-09-05T03:43:18Z&sv=2022-11-02&sr=c&sig=AvcrAAMy9UeH%2FxITwT2aWSw8bFZ2dXLuom6APUCHj8c%3D"
+    token = "?sp=racwdl&st=2024-09-11T21:01:30Z&se=2024-09-20T05:01:30Z&sv=2022-11-02&sr=c&sig=gzrvPjmxxGMo3cwtTZeMFWSK1pJr4ASPeOi5oQOEy3k%3D"
 
     processed_files_log = 'processed_files.txt'
+
+    subprocess.run('export AZCOPY_LOG_LOCATION="mnt/c/Users/Admin/Desktop/MauMau/Estudos/Az/AzCopy/ProjetoAzCopyPython"', shell=True)
 
     file_system_manager = FileSystemManager(directory_to_watch, logger)
     az_copy = AzCopy(azcopy_path, file_system_manager, logger, retries=1, retry_delay=10)
